@@ -1,0 +1,55 @@
+{
+  "name": "bee-gee",
+  "version": "0.1.0",
+  "description": "Custom pixel-art wallpaper for the opencode home screen (CLI-only TUI plugin, no rebuild required)",
+  "type": "module",
+  "license": "MIT",
+  "author": "Parth Khandelwal",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/parthkhxndelwal/bee-gee.git"
+  },
+  "homepage": "https://github.com/parthkhxndelwal/bee-gee#readme",
+  "bugs": {
+    "url": "https://github.com/parthkhxndelwal/bee-gee/issues"
+  },
+  "keywords": [
+    "opencode",
+    "tui",
+    "terminal",
+    "wallpaper",
+    "background",
+    "pixel-art",
+    "opentui"
+  ],
+  "exports": {
+    ".": "./index.ts",
+    "./tui": "./tui.tsx"
+  },
+  "files": [
+    "index.ts",
+    "tui.tsx",
+    "pngjs.d.ts",
+    "assets/opencode-deepseek-theme.png"
+  ],
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit --jsx react-jsx --jsxImportSource @opentui/solid --module esnext --target esnext --moduleResolution bundler --skipLibCheck --typeRoots ./node_modules/@types ./tui.tsx"
+  },
+  "dependencies": {
+    "@opencode/plugin": "^2.0.3",
+    "pngjs": "^7.0.0"
+  },
+  "peerDependencies": {
+    "@opentui/core": ">=0.5.8",
+    "@opentui/solid": ">=0.5.8",
+    "solid-js": ">=1.9.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6"
+  }
+}

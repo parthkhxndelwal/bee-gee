@@ -1,0 +1,7 @@
+# Normalize line endings so checksums and diffs are stable cross-platform.
+* text=auto
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.png binary
