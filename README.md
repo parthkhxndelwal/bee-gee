@@ -2,7 +2,7 @@
 
 A custom pixel-art **wallpaper for the [opencode](https://opencode.ai) home screen** — as a CLI-only TUI plugin. No rebuild of opencode required.
 
-![bee-gee wallpaper](assets/opencode-deepseek-theme.png)
+![bee-gee wallpaper](assets/bee-gee-preview.png)
 
 It renders a full-screen image behind the UI (cell-by-cell block art, so it
 works in any truecolor terminal — no Kitty/Sixel needed), with procedural art
