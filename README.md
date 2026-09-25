@@ -93,6 +93,120 @@ glyphs carry an opaque shadow color and the prompt textarea has a built-in
 fill — neither is reachable from any plugin API, so those two elements keep
 their designed backdrops while the wallpaper fills everything else.
 
+## OpenCode Desktop
+
+The desktop app has no plugin system, so bee-gee injects the wallpaper into
+the running app instead. The image is rendered **behind** the whole UI: the
+window background shows the wallpaper and the app's raised panels become
+translucent so it shows through.
+
+### Automatic (recommended)
+
+When bee-gee is installed as an opencode plugin — the background service
+loads it, e.g. cloned into `~/.config/opencode/plugins/bee-gee` or listed in
+`opencode.json` `plugins` — it injects automatically every time OpenCode
+Desktop starts. No extra process and nothing to launch: the watcher lives
+inside the opencode background service. It watches Desktop's `SingletonLock`,
+validates that the pid it names really is the OpenCode main process, briefly
+opens the app's inspector via SIGUSR1 on `127.0.0.1:9229`, injects, and
+closes it again. Opt out with `"desktop": { "autoInject": false }`.
+macOS/Linux only.
+
+### Manual
+
+The `bee-gee-desktop` launcher remains for Windows, or when bee-gee is not
+installed as a plugin (it also works as a one-shot injector). Requires
+Node 22+ (the launcher needs the global `WebSocket`):
+
+```sh
+# no install — run it straight from GitHub
+npx --package=github:takltc/bee-gee bee-gee-desktop
+
+# or from a local checkout / installed plugin
+node <plugin dir>/desktop/launch.mjs
+```
+
+- OpenCode **not running** → the launcher starts it with a temporary
+  inspector, injects, and disconnects.
+- OpenCode **already running** (macOS/Linux) → it attaches in place: SIGUSR1
+  opens the app's inspector, the injector is evaluated, the inspector is
+  closed again. Pass `--restart` to quit and relaunch instead.
+- `--app <path>` (or `BEE_GEE_OPENCODE_APP`) points at a non-standard install;
+  on macOS a `.app` bundle path works too. Extra args after `--` are passed
+  to the app on launch.
+
+Settings live in the same `cli.json` plugin options, under a `desktop` block,
+and **apply live** — saving the file (or the image it points at) updates the
+wallpaper without a restart. `brightness`, `opacity`, and `panelOpacity`
+can be set once at the `desktop` level (shared by both schemes) or
+per color scheme inside `desktop.dark` / `desktop.light`:
+
+```jsonc
+{
+  "plugins": [
+    {
+      "package": "./plugins/bee-gee",
+      "options": {
+        "desktop": {
+          "enabled": true,
+          "image": "~/Pictures/wall.png", // optional; falls back to `image`, then the bundled wallpaper
+          "pixelated": true, // nearest-neighbor scaling keeps pixel art crisp; false for photos
+          "autoInject": true, // inject automatically on every Desktop start (default true)
+          "dark": { "brightness": 0.6, "opacity": 1, "panelOpacity": 0.25 },
+          "light": { "brightness": 0.7, "opacity": 1, "panelOpacity": 0.95 },
+        },
+      },
+    },
+  ],
+}
+```
+
+Precedence per scheme: `desktop.<scheme>.x` → `desktop.x` → (dark only)
+plugin-level `x` → default. TUI `brightness`/`opacity` options feed the dark
+scheme only — they are tuned for a dark terminal.
+
+Numeric settings accept fractions (`0.05`–`1`) or percentages (`5`–`100`)
+and clamp to that range.
+
+Both schemes preserve the wallpaper's original colors. In light mode, the
+home screen's central content card and top toolbar get their own backdrops,
+while the conversation canvas and composer docks remain transparent. The
+95% backing is localized to assistant content, working/retry status, message
+metadata and the input box, leaving the wallpaper visible around them.
+Muted labels use the theme's secondary text color for readability.
+
+| Option                         | Default (dark / light) | Notes                                                                                                                 |
+| ------------------------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `enabled`                      | `true`                 | Set `false` to keep the injector but hide the wallpaper.                                                              |
+| `image`                        | bundled wallpaper      | `~` expands, relative paths resolve against the config dir.                                                           |
+| `pixelated`                    | `true`                 | Nearest-neighbor scaling (crisp pixel art, like the TUI's block rendering). Set `false` for smooth scaling of photos. |
+| `autoInject`                   | `true`                 | Automatically inject on every Desktop start via the plugin-loaded service hook. Set `false` to only inject manually.  |
+| `dark`/`light` `.brightness`   | `0.6` / `0.7`          | Dims the image toward black in both schemes.                                                                          |
+| `dark`/`light` `.opacity`      | `1` / `1`              | Lower values fade the image toward the theme's window background; the default adds no wash.                           |
+| `dark`/`light` `.panelOpacity` | `0.25` / `0.95`        | How opaque content backdrops (home card, messages, input, dialogs) stay over the wallpaper.                           |
+
+### How the desktop injection works
+
+The injector opens the Electron main-process inspector on `127.0.0.1` only —
+via SIGUSR1 on an already-running instance, or by launching the app with
+`--inspect` — evaluates `desktop/injector.cjs` inside it, and closes the
+inspector right after. Nothing in the app bundle is modified. The injector
+watches `cli.json` and the image file for live reload; diagnostic lines go to
+`<tmpdir>/bee-gee/desktop.log` (auto-inject lines are prefixed `[auto]`).
+
+### Desktop limitations
+
+- Auto-injection needs the plugin loaded by the opencode background service
+  (`opencode serve --service`, which Desktop starts) — macOS/Linux only. If
+  the service isn't running the wallpaper won't appear; the manual launcher
+  still works.
+- Manual injection is in-memory: **re-run `bee-gee-desktop` after each app
+  restart** if the plugin path isn't set up.
+- Only `cli.json` is shared with the TUI plugin — palette/storage overrides
+  made inside the TUI do not carry over (and vice versa).
+- Windows/Linux install paths are untested; on Windows, attaching to an
+  already-running instance is not possible (quit the app or use `--restart`).
+
 ## Contributing
 
 Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).

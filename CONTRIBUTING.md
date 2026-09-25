@@ -31,9 +31,11 @@ need the background service to pick them up.)
 Useful commands:
 
 ```sh
-npm run format        # prettier --write .
-npm run format:check  # fail on unformatted files (CI runs this)
-npm run typecheck     # tsc --noEmit over tui.tsx
+npm run format            # prettier --write .
+npm run format:check      # fail on unformatted files (CI runs this)
+npm run typecheck         # tsc --noEmit over tui.tsx
+npm test                  # node --test desktop/
+npm run typecheck:desktop # tsc --checkJs over the desktop launcher/injector
 ```
 
 ## Style
@@ -49,11 +51,26 @@ npm run typecheck     # tsc --noEmit over tui.tsx
 - `tui.tsx` — everything: background layer, procedural patterns, image
   pre-processing (brightness/opacity via `pngjs`), settings dialog, palette
   commands.
-- `index.ts` — server stub. Keep it import-free so it loads under the
-  server's module resolver without `node_modules`.
+- `index.ts` — server entry: hosts the Desktop auto-injector
+  (`desktop/auto.mjs`). Keep it to relative imports + node builtins so it
+  loads under the server's module resolver without `node_modules`.
 - `assets/` — bundled wallpaper(s). Strip metadata before adding images
   (decode + re-encode drops ancillary PNG chunks).
 - `pngjs.d.ts` — minimal typings for the untyped `pngjs` dependency.
+- `desktop/launch.mjs` — `bee-gee-desktop` CLI: thin arg-parsing wrapper over
+  attach.mjs (finds the app, picks attach vs launch, prints results).
+- `desktop/attach.mjs` — shared injection machinery: process detection,
+  graceful quit, inspector polling, the CDP client, and the
+  attach/launch + inject + close-inspector flows.
+- `desktop/auto.mjs` — in-service auto-injection: watches Desktop's
+  `SingletonLock` in its userData dir, validates the pid, injects. Called by
+  `index.ts` via a refcounted `acquire()`.
+- `desktop/injector.cjs` — the code evaluated inside the Electron main
+  process: tracks renderers, watches cli.json + the image, applies the
+  wallpaper stylesheet. `renderWallpaper()` is serialized into the renderer,
+  so it must stay self-contained.
+- `desktop/config.cjs` — shared cli.json/JSONC/settings helpers (node
+  builtins only). `desktop/config.test.mjs` covers it.
 
 ## Pull requests
 
